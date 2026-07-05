@@ -18,7 +18,7 @@ export const createComplaintAction = async (data: {
   priority: string;
 }): Promise<ActionResponse<any>> => {
   try {
-    const result = await createComplaint(data);
+    const result = await createComplaint({ ...data, status: "PENDING" });
     revalidatePath("/dashboard/residency/compliants");
     revalidatePath("/dashboard/owner/complaints");
     return {

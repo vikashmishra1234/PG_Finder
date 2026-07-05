@@ -70,6 +70,10 @@ export interface IUser {
   roles?: IRole[];
 
   pgs?: IPG[];
+
+  stayingInPgId?: string | null;
+  roomNo?: string | null;
+  bedNo?: string | null;
 }
 
 export interface IRole {

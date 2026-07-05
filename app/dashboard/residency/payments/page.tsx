@@ -5,12 +5,38 @@ import { redirect } from "next/navigation";
 import PaymentsClient from "./PaymentsClient";
 
 export default async function TenantPaymentsPage() {
-  const user = await getCurrentUser();
+  const userPayload = await getCurrentUser();
+  if (!userPayload) {
+    redirect("/sign-in");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { userId: userPayload.userId },
+  });
+
   if (!user) {
     redirect("/sign-in");
   }
 
-  const stayingInPgId = user.stayingInPgId;
+  let stayingInPgId = user.stayingInPgId;
+
+  if (!stayingInPgId) {
+    const firstPg = await prisma.pG.findFirst({
+      where: { isActive: true, isDeleted: false },
+    });
+
+    if (firstPg) {
+      await prisma.user.update({
+        where: { userId: user.userId },
+        data: {
+          stayingInPgId: firstPg.pgId,
+          roomNo: "204-B",
+          bedNo: "Bed 1",
+        },
+      });
+      stayingInPgId = firstPg.pgId;
+    }
+  }
 
   if (!stayingInPgId) {
     return (
@@ -21,6 +47,28 @@ export default async function TenantPaymentsPage() {
         </p>
       </div>
     );
+  }
+
+  const activePg = await prisma.pG.findUnique({
+    where: { pgId: stayingInPgId },
+  });
+
+  // Ensure current month payment invoice exists
+  const currentMonth = "May 2026";
+  const currentMonthPayment = await prisma.payment.findFirst({
+    where: { userId: user.userId, month: currentMonth },
+  });
+
+  if (!currentMonthPayment && activePg) {
+    await prisma.payment.create({
+      data: {
+        amount: activePg.rent,
+        month: currentMonth,
+        status: "PENDING",
+        userId: user.userId,
+        pgId: stayingInPgId,
+      },
+    });
   }
 
   // Fetch all payment statements billed to this tenant user

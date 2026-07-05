@@ -5,7 +5,15 @@ import { redirect } from "next/navigation";
 import ComplaintsClient from "./ComplaintsClient";
 
 export default async function TenantComplaintsPage() {
-  const user = await getCurrentUser();
+  const userPayload = await getCurrentUser();
+  if (!userPayload) {
+    redirect("/sign-in");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { userId: userPayload.userId },
+  });
+
   if (!user) {
     redirect("/sign-in");
   }

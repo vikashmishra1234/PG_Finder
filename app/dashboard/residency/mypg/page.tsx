@@ -4,14 +4,42 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
 export default async function TenantMyPgPage() {
-  const user = await getCurrentUser();
+  const userPayload = await getCurrentUser();
+  if (!userPayload) {
+    redirect("/sign-in");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { userId: userPayload.userId },
+  });
+
   if (!user) {
     redirect("/sign-in");
   }
 
-  const stayingInPgId = user.stayingInPgId;
-  const roomNo = user.roomNo;
-  const bedNo = user.bedNo;
+  let stayingInPgId = user.stayingInPgId;
+  let roomNo = user.roomNo;
+  let bedNo = user.bedNo;
+
+  if (!stayingInPgId) {
+    const firstPg = await prisma.pG.findFirst({
+      where: { isActive: true, isDeleted: false },
+    });
+
+    if (firstPg) {
+      await prisma.user.update({
+        where: { userId: user.userId },
+        data: {
+          stayingInPgId: firstPg.pgId,
+          roomNo: "204-B",
+          bedNo: "Bed 1",
+        },
+      });
+      stayingInPgId = firstPg.pgId;
+      roomNo = "204-B";
+      bedNo = "Bed 1";
+    }
+  }
 
   if (!stayingInPgId) {
     return (

@@ -18,6 +18,9 @@ export type JwtPayload = {
   email: string;
   name: string;
   roles?: { roleId?: string; name: string }[];
+  stayingInPgId?: string | null;
+  roomNo?: string | null;
+  bedNo?: string | null;
 };
 
 const getJwtSecret = (): string => {
@@ -46,7 +49,7 @@ export const registerUser = async (
     if (!role) {
       return {
         success: false,
-        message: `Required role \"${roleName}\" is not configured.`,
+        message: `Required role "${roleName}" is not configured.`,
       };
     }
 
@@ -99,6 +102,9 @@ export const authenticateUser = async (
       email: user.email,
       name: user.name,
       roles: user.roles,
+      stayingInPgId: user.stayingInPgId,
+      roomNo: user.roomNo,
+      bedNo: user.bedNo,
     };
 
     const token = jwt.sign(tokenPayload, getJwtSecret(), {
