@@ -1,0 +1,155 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Test {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model User {
+  userId String @id @default(uuid())
+
+  name     String
+  email    String @unique
+  password String
+
+  isDeleted Boolean @default(false)
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roles Role[]
+  pgId  PG[]
+
+  // Residency stay details
+  stayingInPgId String?
+  roomNo        String?
+  bedNo         String?
+
+  complaints Complaint[]
+  payments   Payment[]
+}
+
+model Role {
+  roleId String @id @default(uuid())
+
+  name String @unique
+
+  createdAt DateTime @default(now())
+
+  users User[]
+}
+
+model PG {
+  pgId   String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [userId])
+
+  // Basic Info
+  title       String
+  description String
+  address     String
+  city        String
+  state       String
+  pincode     String
+
+  // PG Details
+  roomsCount    Int
+  availableBeds Int
+  genderType    GenderType
+  roomType      RoomType
+
+  // Pricing
+  rent           Float
+  securityFee    Float?
+  maintenanceFee Float?
+
+  // Facilities
+  foodAvailable    Boolean @default(false)
+  wifiAvailable    Boolean @default(false)
+  parkingAvailable Boolean @default(false)
+  laundryAvailable Boolean @default(false)
+  acAvailable      Boolean @default(false)
+
+  // Owner Details
+  ownerName  String
+  ownerPhone String
+  ownerEmail String?
+
+  // Media
+  images String[]
+
+  // Status
+  isAvailable Boolean @default(true)
+  isVerified  Boolean @default(false)
+  isDeleted   Boolean @default(false)
+  isActive    Boolean @default(true)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  complaints Complaint[]
+  payments   Payment[]
+}
+
+model Complaint {
+  complaintId String @id @default(uuid())
+  userId      String
+  user        User   @relation(fields: [userId], references: [userId])
+  pgId        String
+  pg          PG     @relation(fields: [pgId], references: [pgId])
+
+  title       String
+  description String
+  category    String // "WiFi", "Plumbing", "Electrical", "Cleaning", "Other"
+  priority    String // "LOW", "MEDIUM", "HIGH"
+  status      String @default("PENDING") // "PENDING", "IN_PROGRESS", "RESOLVED"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Payment {
+  paymentId String @id @default(uuid())
+  userId    String
+  user      User   @relation(fields: [userId], references: [userId])
+  pgId      String
+  pg        PG     @relation(fields: [pgId], references: [pgId])
+
+  amount        Float
+  month         String // e.g. "May 2026", "June 2026"
+  status        String  @default("PENDING") // "PAID", "PENDING", "OVERDUE"
+  transactionId String?
+  paymentMethod String? // "UPI", "CARD", "CASH", "NET_BANKING"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum GenderType {
+  MALE
+  FEMALE
+  UNISEX
+}
+
+enum RoomType {
+  SINGLE
+  DOUBLE
+  TRIPLE
+  DORMITORY
+}
